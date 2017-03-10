@@ -36,7 +36,7 @@ class HBaseDataStoreTest extends Specification with LazyLogging {
 
   val cluster = new HBaseTestingUtility()
   var connection: Connection = null
-  var remote: Boolean = false
+  var remote: Boolean = true
 
   step {
     logger.info("Starting embedded hbase")

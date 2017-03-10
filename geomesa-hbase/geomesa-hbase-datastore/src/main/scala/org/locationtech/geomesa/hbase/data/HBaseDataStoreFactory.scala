@@ -33,6 +33,11 @@ class HBaseDataStoreFactory extends DataStoreFactorySpi {
     val connection = ConnectionParam.lookupOpt[Connection](params).getOrElse {
       ConnectionFactory.createConnection(HBaseConfiguration.create())
     }
+
+    val remote = RemoteParam.lookupOpt[Boolean](params).getOrElse {
+      false
+    }
+
     val catalog = BigTableNameParam.lookup[String](params)
 
     val generateStats = GenerateStatsParam.lookupWithDefault[Boolean](params)
@@ -47,7 +52,7 @@ class HBaseDataStoreFactory extends DataStoreFactorySpi {
     val caching = CachingParam.lookupWithDefault[Boolean](params)
     val config = HBaseDataStoreConfig(catalog, generateStats, audit, queryThreads, queryTimeout, looseBBox, caching)
 
-    new HBaseDataStore(connection, config)
+    new HBaseDataStore(connection, remote, config)
   }
 
   override def getDisplayName: String = HBaseDataStoreFactory.DisplayName
@@ -55,7 +60,7 @@ class HBaseDataStoreFactory extends DataStoreFactorySpi {
   override def getDescription: String = HBaseDataStoreFactory.Description
 
   override def getParametersInfo: Array[Param] =
-    Array(BigTableNameParam, QueryThreadsParam, QueryTimeoutParam, GenerateStatsParam,
+    Array(BigTableNameParam, RemoteParam, QueryThreadsParam, QueryTimeoutParam, GenerateStatsParam,
       AuditQueriesParam, LooseBBoxParam, CachingParam)
 
   override def canProcess(params: java.util.Map[String,Serializable]) = params.containsKey(BigTableNameParam.key)
@@ -73,6 +78,7 @@ object HBaseDataStoreFactory {
   object Params {
     val BigTableNameParam  = new Param("bigtable.table.name", classOf[String], "Table name", true)
     val ConnectionParam    = new Param("connection", classOf[Connection], "Connection", false)
+    val RemoteParam        = new Param("remote", classOf[Boolean], "Remote filtering", false)
     val LooseBBoxParam     = GeoMesaDataStoreFactory.LooseBBoxParam
     val QueryThreadsParam  = GeoMesaDataStoreFactory.QueryThreadsParam
     val GenerateStatsParam = GeoMesaDataStoreFactory.GenerateStatsParam

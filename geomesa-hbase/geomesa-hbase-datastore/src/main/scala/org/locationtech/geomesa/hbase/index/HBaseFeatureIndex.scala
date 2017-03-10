@@ -114,7 +114,7 @@ trait HBaseFeatureIndex extends HBaseFeatureIndexType
     } else {
       val table = TableName.valueOf(getTableName(sft.getTypeName, ds))
       val dedupe = hasDuplicates(sft, filter.primary)
-      val ScanConfig(hbaseFilters, cf, toFeatures, reduce) = scanConfig(sft, filter, hints, ecql, dedupe)
+      val ScanConfig(hbaseFilters, cf, toFeatures, reduce) = scanConfig(sft, filter, hints, ecql, dedupe, ds.remote)
 
       if (ranges.head.isInstanceOf[Get]) {
         GetPlan(filter, table, ranges.asInstanceOf[Seq[Get]], ecql, toFeatures)
@@ -150,7 +150,7 @@ trait HBaseFeatureIndex extends HBaseFeatureIndexType
   override protected def rangeExact(row: Array[Byte]): Query =
     new Get(row).addColumn(DataColumnFamily.getBytes, DataColumnQualifier.getBytes)
 
-  override protected def rowAndValue(result: Result): RowAndValue = {
+  override def rowAndValue(result: Result): RowAndValue = {
     val cell = result.rawCells()(0)
     RowAndValue(cell.getRowArray, cell.getRowOffset, cell.getRowLength,
       cell.getValueArray, cell.getValueOffset, cell.getValueLength)
@@ -173,12 +173,12 @@ trait HBaseFeatureIndex extends HBaseFeatureIndexType
                            filter: HBaseFilterStrategyType,
                            hints: Hints,
                            ecql: Option[Filter],
-                           dedupe: Boolean): ScanConfig = {
+                           dedupe: Boolean,
+                           remote: Boolean): ScanConfig = {
 
     import HBaseFeatureIndex.{DataColumnFamily}
     import org.locationtech.geomesa.index.conf.QueryHints.RichHints
 
-    /** needs to handle remote filter aspect being done by Arnesh **/
     /** Needs to handle different filters based on the hint type **/
     /** Still under constrution **/
 
@@ -187,7 +187,8 @@ trait HBaseFeatureIndex extends HBaseFeatureIndexType
 //      val reduce = Some(KryoLazyStatsIterator.reduceFeatures(sft, hints)(_))
 //      ScanConfig(Seq(iter), FullColumnFamily, KryoLazyStatsIterator.kvsToFeatures(sft), reduce)
 //    } else {
-      val toFeatures = resultsToFeatures(sft, ecql, hints.getTransform)
+      var toFeatures = resultsToFeatures(sft, ecql, None)
+      if (remote) {toFeatures = resultsToFeatures(sft, ecql, hints.getTransform)}
       val remoteFilters = filter.filter.map { filter =>
         new JSimpleFeatureFilter(sft, filter)
       }.toSeq
