@@ -188,6 +188,7 @@ trait HBaseFeatureIndex extends HBaseFeatureIndexType
 //      ScanConfig(Seq(iter), FullColumnFamily, KryoLazyStatsIterator.kvsToFeatures(sft), reduce)
 //    } else {
       var toFeatures = resultsToFeatures(sft, ecql, None)
+    
       if (remote) {toFeatures = resultsToFeatures(sft, ecql, hints.getTransform)}
       val remoteFilters = filter.filter.map { filter =>
         new JSimpleFeatureFilter(sft, filter)
